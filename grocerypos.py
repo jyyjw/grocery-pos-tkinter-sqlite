@@ -79,7 +79,9 @@ def add_customer(conn, customer):
 
 class GroceryPOS():
     def __init__(self):
-        self.cart_amount = 0
+
+        # Initialize all the tkinter widgets
+
         self.customer_label = Label(window, text="Customer Lookup", foreground='#445969', 
                                     font=('Skynight', 20), background='#B6C4D6',)
         self.customer_label.grid(row=0, column=1, pady=8)
@@ -91,6 +93,7 @@ class GroceryPOS():
         self.customers = []
         self.cart = []
         self.customer_list = []
+        self.customer_id = ""
         self.search_label = Label(text="Name or Phone",
                                     foreground='#445969', 
                                     font=('Skynight', 12), background='#B6C4D6')
@@ -105,23 +108,29 @@ class GroceryPOS():
         self.search_entry.grid(row=1, column=1, pady=2, padx=2)
         self.search_button = Button(window, text='Search', font=('Skynight', 12), background='#FFFFFF', command=self.search_customer)
         self.search_button.grid(row=1, column=2, padx=5)
+
+        # Product Search Widgets
+
         self.products_label = Label(window, text="Search Products",foreground='#445969', 
                                     font=('Skynight', 20), background='#B6C4D6', pady=15)
         self.products_label.grid(row=2, column=1, pady=2)
         self.products_entry_var = StringVar()
-        self.products = []
+        #self.products = []
         self.products_list = []
         self.products_search_label = Label(window, text="Product name", foreground='#445969', 
                                     font=('Skynight', 14), background='#B6C4D6')
         self.products_search_var = StringVar()
-        self.procuts_search_entry = Entry(window, textvariable=self.products_search_var, width=20, font='Skynight')
+        self.products_search_entry = Entry(window, textvariable=self.products_search_var, width=20, font='Skynight')
         self.products_search_label.grid(row=3, column=0, padx=4)
-        self.procuts_search_entry.grid(row=3, column=1)
+        self.products_search_entry.grid(row=3, column=1)
         self.products_search_button = Button(window, text="Search", foreground='#445969', 
                                     font=('Skynight', 12), background='White', command=self.search_product)
         self.products_search_button.grid(row=3, column=2, padx=5)
         self.product_results = ttk.Combobox(window, values=self.products_list, font=('Skynight', 15), width=10 )
-        self.cart_text = f"Cart amount: {self.cart_amount}"
+        self.cart_text = f"Cart amount: {len(self.cart)}"
+
+        # Cart Widgets
+
         self.cart_number_var = StringVar(value=self.cart_text)
         self.cart_number_label = Label(window, textvariable=self.cart_number_var, text=self.cart_text, foreground='#445969', 
                                     font=('Skynight', 11), background='#B6C4D6')
@@ -151,7 +160,7 @@ class GroceryPOS():
     def search_product(self):
         self.products_list = []
         try:
-            input = self.procuts_search_entry.get()
+            input = self.products_search_entry.get()
             if len(input) == 0:
                 messagebox.showerror("Error", "Search cannot be empty")
                 return
@@ -174,11 +183,10 @@ class GroceryPOS():
                 self.product_results.current(0)
                 product_select = Button(window, text="Add to cart", font=('Skynight', 10), command=self.add_product)
                 product_select.grid(row=3, column=5, padx=5)
-                self.products_search_var.set("")
         except TclError as e:
             messagebox.showerror("Error", "No results for that name")
             window.geometry('500x450+550+150')
-            self.product_results.destroy()
+            self.product_results.grid_forget()
             print(f"An error occurred: {e}")
 
     def search_customer(self):
@@ -211,22 +219,61 @@ class GroceryPOS():
         except TclError as e:
             messagebox.showerror("Error", "No results for that name")
             window.geometry('500x450+550+150')
-            self.customer_results.destroy()
+            self.customer_results.grid_forget()
             print(f"An error occurred: {e}")
             
     def add_product(self):
-        pass
+        try:
+            product = self.product_results.get()
+            product = product[1:-1]
+            search_term = f"%{product}%"
+            
+            self.products_search_var.set("")
+            self.product_results.grid_forget()
+            window.geometry('500x450+550+150')
+
+            with sqlite3.connect('grocery.db') as connection:
+                    
+                    cursor = connection.cursor()
+                    sql = "SELECT id from products WHERE name LIKE ?"
+
+                    cursor.execute(sql, (search_term,))
+
+                    id = cursor.fetchone()
+                    product_id = id[0]
+
+                    self.cart.append(product_id)
+                
+            print(f"Product id: {product_id}")
+            self.cart_number_var.set(value=f"Cart amount: {len(self.cart)}")
+
+        except TypeError as e:
+            print(f"Error: {e}")
 
     def select_customer(self):
-        self.new_customer_button.destroy()
-        self.customer_select.destroy()
+        self.new_customer_button.grid_forget()
+        self.customer_select.grid_forget()
         window.geometry('500x450+550+150')
         self.customer = self.customer_results.get()
         self.customer_var.set(f"Hi {self.customer}!")
-        self.customer_results.destroy()
+        self.customer_results.grid_forget()
         print(self.customer)
         self.customer_label2.grid(row= 0, column= 2, pady = 8)
         self.search_var.set("")
+
+        with sqlite3.connect('grocery.db') as connection:
+                
+                cursor = connection.cursor()
+                sql = "SELECT id from customers WHERE name = ?"
+
+                cursor.execute(sql, (self.customer,))
+
+                id = cursor.fetchone()
+                self.customer_id = id[0]
+            
+        print(f"customer id: {self.customer_id}")
+
+        return self.main_screen_customer_selected()
 
     def new_customer(self):
         for widget in window.winfo_children():
@@ -273,13 +320,16 @@ class GroceryPOS():
         self.new_customer_button.grid(row= 0, column= 2, pady = 8)
         self.customer_label.grid(row=0, column=1, pady=8)
 
+    def main_screen_customer_selected(self):
+        for widget in window.winfo_children():
+            widget.grid_forget()
+        self.customer_label2.grid(row= 0, column= 2, pady = 8)
+        self.products_label.grid(row=0, column=1, pady=2)
+        self.products_search_label.grid(row=3, column=0, padx=4)
+        self.procuts_search_entry.grid(row=3, column=1)
+        self.products_search_button.grid(row=3, column=2, padx=5)
+        self.cart_number_label.grid(row=0, column=0)
         
-
-
-
-
-
-
 
 app = GroceryPOS()
 window.mainloop()
