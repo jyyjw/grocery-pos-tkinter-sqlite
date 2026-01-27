@@ -4,7 +4,7 @@ from tkinter import ttk
 import sqlite3
 
 window = Tk()
-window.geometry('500x450+550+150')
+window.geometry('400x350+550+250')
 window.configure(bg="#B6C4D6")
 
 def add_product(conn, product):
@@ -132,8 +132,10 @@ class GroceryPOS():
         # Cart Widgets
 
         self.cart_number_var = StringVar(value=self.cart_text)
-        self.cart_number_label = Label(window, textvariable=self.cart_number_var, text=self.cart_text, foreground='#445969', 
-                                    font=('Skynight', 11), background='#B6C4D6')
+        self.cart_number_label = Button(window, textvariable=self.cart_number_var, text=self.cart_text, foreground='#445969', 
+                                    font=('Skynight', 11), background='#B6C4D6', command=self.view_cart)
+        # self.cart_number_label = Label(window, textvariable=self.cart_number_var, text=self.cart_text, foreground='#445969', 
+        #                             font=('Skynight', 11), background='#B6C4D6')
         self.cart_number_label.grid(row=0, column=0)
         self.customer_results = ttk.Combobox(window, values=self.customer_list, font=('Skynight', 15), width=10 )
 
@@ -165,7 +167,7 @@ class GroceryPOS():
                 messagebox.showerror("Error", "Search cannot be empty")
                 return
 
-            window.geometry('750x450+550+150')
+            window.geometry('650x350+550+250')
             search_term = f"%{input}%"
             with sqlite3.connect('grocery.db') as connection:
                 cursor = connection.cursor()
@@ -185,7 +187,7 @@ class GroceryPOS():
                 product_select.grid(row=3, column=5, padx=5)
         except TclError as e:
             messagebox.showerror("Error", "No results for that name")
-            window.geometry('500x450+550+150')
+            window.geometry('400x350+550+250')
             self.product_results.grid_forget()
             print(f"An error occurred: {e}")
 
@@ -197,7 +199,7 @@ class GroceryPOS():
                 messagebox.showerror("Error", "Search cannot be empty")
                 return
             
-            window.geometry('780x450+550+150')
+            window.geometry('650x350+550+250')
             search_term = f"%{input}%"
             
             with sqlite3.connect('grocery.db') as connection:
@@ -218,7 +220,7 @@ class GroceryPOS():
                 self.customer_select.grid(row=1, column=5, padx=5)
         except TclError as e:
             messagebox.showerror("Error", "No results for that name")
-            window.geometry('500x450+550+150')
+            window.geometry('400x350+550+250')
             self.customer_results.grid_forget()
             print(f"An error occurred: {e}")
             
@@ -253,7 +255,7 @@ class GroceryPOS():
     def select_customer(self):
         self.new_customer_button.grid_forget()
         self.customer_select.grid_forget()
-        window.geometry('500x450+550+150')
+        window.geometry('400x350+550+250')
         self.customer = self.customer_results.get()
         self.customer_var.set(f"Hi {self.customer}!")
         self.customer_results.grid_forget()
@@ -312,7 +314,7 @@ class GroceryPOS():
         self.search_button.grid(row=1, column=2, padx=5)
         self.products_label.grid(row=2, column=1, pady=2)
         self.products_search_label.grid(row=3, column=0, padx=4)
-        self.procuts_search_entry.grid(row=3, column=1)
+        self.products_search_entry.grid(row=3, column=1)
         self.products_search_button.grid(row=3, column=2, padx=5)
         self.cart_number_label.grid(row=0, column=0)
         self.search_entry.grid(row=1, column=1, pady=2, padx=2)
@@ -326,10 +328,31 @@ class GroceryPOS():
         self.customer_label2.grid(row= 0, column= 2, pady = 8)
         self.products_label.grid(row=0, column=1, pady=2)
         self.products_search_label.grid(row=3, column=0, padx=4)
-        self.procuts_search_entry.grid(row=3, column=1)
+        self.products_search_entry.grid(row=3, column=1)
         self.products_search_button.grid(row=3, column=2, padx=5)
         self.cart_number_label.grid(row=0, column=0)
-        
+
+    def view_cart(self):
+        if len(self.cart) == 0:
+            messagebox.showerror("Error", "!cart is empty!")
+
+        for item in self.cart:
+            with sqlite3.connect('grocery.db') as connection:
+                    
+                    cursor = connection.cursor()
+                    sql = "SELECT name from products WHERE id = ?"
+
+                    cursor.execute(sql, (search_term,))
+
+                    id = cursor.fetchone()
+                    product_id = id[0]
+
+                    self.cart.append(product_id)
+        top= Toplevel(window)
+        top.geometry('200x170+550+250')
+        top.title("Cart")
+        Label(text= "Items in cart", font=('Skynight', 20), background='#B6C4D6', foreground='#445969')
+        cart = f"Items in cart: "
 
 app = GroceryPOS()
 window.mainloop()
