@@ -4,7 +4,7 @@ from tkinter import ttk
 import sqlite3
 
 window = Tk()
-window.geometry('400x350+550+250')
+window.geometry('475x250+550+250')
 window.configure(bg="#B6C4D6")
 
 def add_product(conn, product):
@@ -104,7 +104,7 @@ class GroceryPOS():
         self.customer_label2 = Label(window, text= f"Hi {self.customer}!", font=('Skynight', 10), textvariable=self.customer_var)
         self.customer_select = Button(window, text="Select Customer", font=('Skynight', 10), command=self.select_customer)
         self.search_var = StringVar()
-        self.search_entry = Entry(window, textvariable=self.search_var, width= 20, font='Skynight')
+        self.search_entry = Entry(window, textvariable=self.search_var, width= 33, font='Skynight')
         self.search_entry.grid(row=1, column=1, pady=2, padx=2)
         self.search_button = Button(window, text='Search', font=('Skynight', 12), background='#FFFFFF', command=self.search_customer)
         self.search_button.grid(row=1, column=2, padx=5)
@@ -120,7 +120,7 @@ class GroceryPOS():
         self.products_search_label = Label(window, text="Product name", foreground='#445969', 
                                     font=('Skynight', 14), background='#B6C4D6')
         self.products_search_var = StringVar()
-        self.products_search_entry = Entry(window, textvariable=self.products_search_var, width=20, font='Skynight')
+        self.products_search_entry = Entry(window, textvariable=self.products_search_var, width=33, font='Skynight')
         self.products_search_label.grid(row=3, column=0, padx=4)
         self.products_search_entry.grid(row=3, column=1)
         self.products_search_button = Button(window, text="Search", foreground='#445969', 
@@ -138,6 +138,7 @@ class GroceryPOS():
         #                             font=('Skynight', 11), background='#B6C4D6')
         self.cart_number_label.grid(row=0, column=0)
         self.customer_results = ttk.Combobox(window, values=self.customer_list, font=('Skynight', 15), width=10 )
+        self.product_select = Button(window, text="Add to cart", font=('Skynight', 10), command=self.add_product)
 
         # New customer Widgets
 
@@ -167,7 +168,7 @@ class GroceryPOS():
                 messagebox.showerror("Error", "Search cannot be empty")
                 return
 
-            window.geometry('650x350+550+250')
+            window.geometry('770x250+550+250')
             search_term = f"%{input}%"
             with sqlite3.connect('grocery.db') as connection:
                 cursor = connection.cursor()
@@ -183,11 +184,10 @@ class GroceryPOS():
                 self.product_results.config(values= self.products_list)
                 self.product_results.grid(row=3, column=4)
                 self.product_results.current(0)
-                product_select = Button(window, text="Add to cart", font=('Skynight', 10), command=self.add_product)
-                product_select.grid(row=3, column=5, padx=5)
+                self.product_select.grid(row=3, column=5, padx=5)
         except TclError as e:
             messagebox.showerror("Error", "No results for that name")
-            window.geometry('400x350+550+250')
+            window.geometry('475x250+550+250')
             self.product_results.grid_forget()
             print(f"An error occurred: {e}")
 
@@ -199,7 +199,7 @@ class GroceryPOS():
                 messagebox.showerror("Error", "Search cannot be empty")
                 return
             
-            window.geometry('650x350+550+250')
+            window.geometry('770x250+550+250')
             search_term = f"%{input}%"
             
             with sqlite3.connect('grocery.db') as connection:
@@ -232,7 +232,8 @@ class GroceryPOS():
             
             self.products_search_var.set("")
             self.product_results.grid_forget()
-            window.geometry('500x450+550+150')
+            self.product_select.grid_forget()
+            window.geometry('475x250+550+250')
 
             with sqlite3.connect('grocery.db') as connection:
                     
@@ -246,7 +247,7 @@ class GroceryPOS():
 
                     self.cart.append(product_id)
                 
-            print(f"Product id: {product_id}")
+            print(f"Product id: {product_id}, Total Products {self.cart}")
             self.cart_number_var.set(value=f"Cart amount: {len(self.cart)}")
 
         except TypeError as e:
@@ -255,7 +256,7 @@ class GroceryPOS():
     def select_customer(self):
         self.new_customer_button.grid_forget()
         self.customer_select.grid_forget()
-        window.geometry('400x350+550+250')
+        window.geometry('475x250+550+250')
         self.customer = self.customer_results.get()
         self.customer_var.set(f"Hi {self.customer}!")
         self.customer_results.grid_forget()
@@ -332,27 +333,35 @@ class GroceryPOS():
         self.products_search_button.grid(row=3, column=2, padx=5)
         self.cart_number_label.grid(row=0, column=0)
 
-    def view_cart(self):
-        if len(self.cart) == 0:
-            messagebox.showerror("Error", "!cart is empty!")
-
-        for item in self.cart:
-            with sqlite3.connect('grocery.db') as connection:
-                    
+    def id_to_name(self, id):
+        with sqlite3.connect('grocery.db') as connection:                    
                     cursor = connection.cursor()
                     sql = "SELECT name from products WHERE id = ?"
-
-                    cursor.execute(sql, (search_term,))
-
+                    cursor.execute(sql, (id,))
                     id = cursor.fetchone()
-                    product_id = id[0]
+                    return id[0]
 
-                    self.cart.append(product_id)
+    def view_cart(self):
+        item_list =[]
+
+        if len(self.cart) == 0:
+            messagebox.showerror("Error", "!cart is empty!")
+            return
+
+        for item in self.cart:
+            print(type(item))
+            item_list.append(self.id_to_name(item))
+
         top= Toplevel(window)
-        top.geometry('200x170+550+250')
+        top.geometry('300x200+700+250')
         top.title("Cart")
-        Label(text= "Items in cart", font=('Skynight', 20), background='#B6C4D6', foreground='#445969')
-        cart = f"Items in cart: "
+        top.configure(bg="#B6C4D6")
+        top.title_label = Label(top, text= "Items in cart", font=('Skynight', 20), background='#B6C4D6', foreground='#445969')
+        top.title_label.grid(row= 0, column=5)
+        top.message = Message(top, text=f"{', '.join(item_list)}", background="#B6C4D6", foreground='#445969', font=('Skynight', 10))
+        top.message.grid(row= 1, column=5)
+        top.close_button = Button(text="Close", command=lambda: top.destroy(), font=('Skynight', 15))
+        top.close_button.grid(row=2, column=5)
 
 app = GroceryPOS()
 window.mainloop()
