@@ -4,7 +4,7 @@ from tkinter import ttk
 import sqlite3
 
 window = Tk()
-window.geometry('500x210+550+250')
+window.geometry('510x210+550+250')
 window.configure(bg="#B6C4D6")
 
 def add_product(conn, product):
@@ -114,6 +114,9 @@ class GroceryPOS():
         self.products_label = Label(window, text="Search Products",foreground='#445969', 
                                     font=('Skynight', 20), background='#B6C4D6', pady=15)
         self.products_label.grid(row=2, column=1, pady=2)
+        self.view_products_button = Button(window, text="View Products", foreground='#445969', 
+                                    font=('Skynight', 12), background='White', command=self.view_products)
+        self.view_products_button.grid(row=2, column=0, pady=2, padx=10)
         self.products_entry_var = StringVar()
         self.products_list = []
         self.products_search_label = Label(window, text="Product name", foreground='#445969', 
@@ -360,6 +363,36 @@ class GroceryPOS():
         top.message.pack()
         top.close_button = Button(top, text="Close", command=lambda: top.destroy(), font=('Skynight', 15))
         top.close_button.pack(padx=30, pady=10, side=BOTTOM)
+
+    def view_products(self):
+
+        product_list = []
+        with sqlite3.connect('grocery.db') as connection:
+                cursor = connection.cursor()
+                sql = "SELECT name FROM products"
+                cursor.execute(sql)
+                products = cursor.fetchall()
+                for product in products:
+                    product_list.append(product[0])
+        
+        print(product_list)
+
+
+        viewprod= Toplevel(window)
+        viewprod.geometry('380x220+620+250')
+        viewprod.title("Products")
+        viewprod.configure(bg="#B6C4D6")
+        viewprod.title_label = Label(viewprod, text= "Products", font=('Skynight', 20), background='#B6C4D6', foreground='#445969')
+        viewprod.title_label.pack()
+        viewprod.message = Label(viewprod, text=f"{' , '.join(product_list)}", background="#B6C4D6", foreground='#445969', font=('Skynight', 17), wraplength=250)
+        viewprod.message.pack()
+        viewprod.close_button = Button(viewprod, text="Close", command=lambda: viewprod.destroy(), font=('Skynight', 15))
+        viewprod.close_button.pack(padx=30, pady=10, side=BOTTOM)
+
+                
+
+            
+
 
 app = GroceryPOS()
 window.mainloop()
