@@ -281,6 +281,7 @@ class GroceryPOS():
     def new_customer(self):
         for widget in window.winfo_children():
             widget.grid_forget()
+        window.geometry('300x210+550+250')
         self.new_customer_title.grid(row=0, column=1, pady=8)
         self.new_customer_firstname_label.grid(row=1, column=0, padx=4)
         self.new_customer_firstentry.grid(row=1, column=1, pady=2, padx=2)
@@ -293,8 +294,24 @@ class GroceryPOS():
      
     def submit_new_customer(self):
         first_name = self.new_customer_firstentry.get()
+        if self.validate_string(first_name) == False:
+            messagebox.showerror("Input Error", "Name can only be letters")
+            return
         last_name = self.new_customer_lastentry.get()
+        if self.validate_string(last_name) == False:
+            messagebox.showerror("Input Error", "Name can only be letters")
+            return
         phone = self.new_customer_phoneentry.get()
+        if self.validate_phone(phone) == False:
+            messagebox.showerror("Input Error", "Enter 10 numbers for phone number")
+            return
+
+        try: 
+             if not first_name or not last_name or not phone:
+                raise ValueError("All fields must be filled out.")
+        except ValueError as e:
+            messagebox.showerror("Input Error", str(e))
+            return
 
         print(f"First name: {first_name} \n Last name: {last_name} \n Phone: {phone}")
         for widget in window.winfo_children():
@@ -311,7 +328,7 @@ class GroceryPOS():
         return self.main_screen()
     
     def main_screen(self):
-
+        window.geometry('510x210+550+250')
         self.search_button.grid(row=1, column=2, padx=5)
         self.products_label.grid(row=2, column=1, pady=2)
         self.products_search_label.grid(row=3, column=0, padx=4)
@@ -389,7 +406,15 @@ class GroceryPOS():
         viewprod.close_button = Button(viewprod, text="Close", command=lambda: viewprod.destroy(), font=('Skynight', 15))
         viewprod.close_button.pack(padx=30, pady=10, side=BOTTOM)
 
-                
+    def validate_string(self, string):
+        if any(c.isdigit() for c in string):
+            return False
+        else: return True
+
+    def validate_phone(self, number):
+        if (number.isdigit()) and (len(number) == 10):
+              return True
+        else: return False
 
             
 
